@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Option 01 · Scroll-controlled</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-mode="scroll">
+
+  <a class="mode-switch" href="index.html">All options</a>
+  <a class="mode-switch mode-switch-alt" href="auto.html">Timed version</a>
+
+  <section class="pin-wrap" aria-label="Scroll-controlled hero to logo">
+    <div class="stage">
+      <div class="canvas" id="canvas">
+        <p class="line l1">CORPORATE</p>
+        <p class="line l2">ADVISORY</p>
+        <p class="line l3">DONE</p>
+        <p class="line l4">DIFFERENTLY</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="after">
+    <div class="col">
+      <h2>Scroll-controlled</h2>
+      <p>
+        The transition stays locked to scroll position — assemble on the way
+        down, reverse on the way up.
+      </p>
+    </div>
+  </section>
+
+  <p class="hint" aria-hidden="true">Scroll</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

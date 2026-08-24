@@ -1,27 +1,22 @@
-# Hero → logo scroll transition
+# Hero → logo transition
 
-Hand-tuned GSAP / ScrollTrigger prototype. Scroll-scrubbed, fully reversible.
+Two presentation options from one shared GSAP sequence.
 
-## Run
+## Options
+
+| URL | Mode |
+|---|---|
+| `/` | Chooser — pick a version |
+| `/scroll.html` | Scroll-controlled (scrub + reverse) |
+| `/auto.html` | Timed autoplay (~9.5s) with Replay |
+
+## Run locally
 
 ```bash
 python3 -m http.server 8000
-# http://localhost:8000
 ```
 
-## Motion notes
+## Shared system
 
-- Typography dissolves with blur and uneven stagger — not cardinal fly-offs
-- Figures anticipate, then drift and fade (no clip-path walk cycles)
-- Each bar has its own anticipation, flight arc, mid-air rotation, and soft land
-- Missing strokes settle in from nearby landed pieces (opacity + offset), not edge-wipe “grows”
-- Soft scrub (`0.85`) so the hand on the wheel feels continuous
-
-## Files
-
-- `index.html` / `style.css` — layout
-- `main.js` — geometry + timeline
-- `img/` — figure cut-outs
-- `INTEGRATION.md` — Webflow handoff
-
-Tune from the console with `window.__tl.progress(0.4)`.
+`main.js` builds one choreography (`buildSequence`).  
+`body[data-mode="scroll"|"auto"]` chooses how that timeline is driven.
