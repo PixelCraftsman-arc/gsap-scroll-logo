@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Hero → logo · scroll transition</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <section class="pin-wrap" aria-label="Hero to logo transition">
+    <div class="stage">
+      <div class="canvas" id="canvas">
+        <p class="line l1">CORPORATE</p>
+        <p class="line l2">ADVISORY</p>
+        <p class="line l3">DONE</p>
+        <p class="line l4">DIFFERENTLY</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="after">
+    <div class="col">
+      <h2>Brand mark, centred.</h2>
+      <p>
+        Scroll either way — the transition stays locked to scroll position.
+      </p>
+    </div>
+  </section>
+
+  <p class="hint" aria-hidden="true">Scroll</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
