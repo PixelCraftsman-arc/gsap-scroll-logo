@@ -57,12 +57,13 @@ body {
 
 .line {
   position: absolute;
+  z-index: 1;
   margin: 0;
   font-weight: 300;
   font-size: 151.3px;
   line-height: 1;
   white-space: nowrap;
-  will-change: transform, opacity, filter;
+  will-change: transform;
 }
 
 .l1 { left: 68px;  top: 68.85px;  letter-spacing: -3.25px; }
@@ -75,7 +76,12 @@ body {
   z-index: 4;
   pointer-events: none;
   user-select: none;
-  will-change: transform, opacity;
+  will-change: transform;
+}
+
+/* Seated woman stays in front of her black bar at all times. */
+.fig--over-bar {
+  z-index: 6;
 }
 
 .fig img {
@@ -88,13 +94,13 @@ body {
   position: absolute;
   z-index: 2;
   background: var(--ink);
-  will-change: transform, opacity, filter;
+  will-change: transform;
   backface-visibility: hidden;
 }
 
 .piece.is-flying {
   z-index: 5;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.12);
 }
 
 .after {

@@ -3,14 +3,25 @@
  * Modes (body[data-mode]):
  *   scroll — scrubbed to scroll position, reversible
  *   auto   — plays once on a timed timeline (replay available)
+ *
+ * Client revisions:
+ * - Figures match the flat lay; seated woman sits in front of her bar
+ * - Opaque figure backs so type never shows through
+ * - Type exits by sliding off (no blur / dissolve)
+ * - Figures exit by walking off-frame while staying fully opaque
+ * - Remaining logo strokes extend as continuous lines from landed pieces
  */
 
+(() => {
 gsap.registerPlugin(ScrollTrigger);
 
 const MODE = document.body.dataset.mode === "auto" ? "auto" : "scroll";
 const DW = 1280;
 const DH = 741;
 const canvas = document.getElementById("canvas");
+
+if (!canvas) return;
+
 const pieces = {};
 const figEls = {};
 
@@ -31,6 +42,7 @@ const LOGO = {
   c3: { x: 841, y: 238, w: 8, h: 61 }
 };
 
+/* Flat-lay hero bars (3 deconstructed pieces + measured bar). */
 const HERO = {
   bar2: { x: 149, y: 243, w: 282, h: 44, rot: -3.6 },
   bar4: { x: 524, y: 399, w: 655, h: 47, rot: 0 },
@@ -47,27 +59,29 @@ const BLEED = {
   c3: { x: -1, w: 2 }
 };
 
+/* Positions matched to the flat lay; sit stays in front of bar4. */
 const FIGS = [
-  { id: "push-bar", src: "fig-push-bar", x: 96, y: 446, w: 98, h: 204 },
-  { id: "measure", src: "fig-measure", x: 1044, y: 70, w: 102, h: 144 },
-  { id: "carry-left", src: "fig-push-left", x: 75, y: 197, w: 106, h: 186 },
-  { id: "sit", src: "fig-sit", x: 718, y: 303, w: 116, h: 181 },
-  { id: "carry-right", src: "fig-carry-right", x: 414, y: 190, w: 109, h: 193 }
+  { id: "carry-left", src: "fig-push-left", x: 75, y: 197, w: 106, h: 186, layer: "front" },
+  { id: "carry-right", src: "fig-carry-right", x: 414, y: 190, w: 109, h: 193, layer: "front" },
+  { id: "sit", src: "fig-sit", x: 718, y: 300, w: 116, h: 181, layer: "over-bar" },
+  { id: "push-bar", src: "fig-push-bar", x: 96, y: 446, w: 98, h: 204, layer: "front" },
+  { id: "measure", src: "fig-measure", x: 1044, y: 70, w: 102, h: 144, layer: "front" }
 ];
 
 const TRAVEL = ["bar2", "bar4", "v1", "v4"];
 
-const SETTLE = [
-  { id: "con1", ox: 0, oy: 18 },
-  { id: "bar1", ox: 0, oy: 36 },
-  { id: "con2", ox: 12, oy: -14 },
-  { id: "bar3", ox: 40, oy: -8 },
-  { id: "con3", ox: -10, oy: -22 },
-  { id: "c1", ox: -16, oy: 8 },
-  { id: "v2", ox: -28, oy: 20 },
-  { id: "c3", ox: 16, oy: 8 },
-  { id: "v3", ox: 28, oy: 24 },
-  { id: "c2", ox: -12, oy: -18 }
+/* Remaining strokes grow out of landed pieces as continuous lines. */
+const EXTEND = [
+  { id: "con1", prop: "scaleY", origin: "50% 100%" },
+  { id: "bar1", prop: "scaleY", origin: "50% 100%" },
+  { id: "con2", prop: "scaleY", origin: "50% 0%" },
+  { id: "bar3", prop: "scaleX", origin: "100% 50%" },
+  { id: "con3", prop: "scaleY", origin: "50% 0%" },
+  { id: "c1", prop: "scaleX", origin: "0% 50%" },
+  { id: "v2", prop: "scaleY", origin: "50% 0%" },
+  { id: "c3", prop: "scaleX", origin: "100% 50%" },
+  { id: "v3", prop: "scaleY", origin: "50% 0%" },
+  { id: "c2", prop: "scaleX", origin: "0% 50%" }
 ];
 
 function makePiece(id, r) {
@@ -87,7 +101,7 @@ Object.keys(LOGO).forEach((k) => makePiece(k, LOGO[k]));
 
 FIGS.forEach((f) => {
   const wrap = document.createElement("div");
-  wrap.className = "fig";
+  wrap.className = "fig fig--" + f.layer;
   wrap.dataset.fig = f.id;
   wrap.style.left = f.x + "px";
   wrap.style.top = f.y + "px";
@@ -128,22 +142,25 @@ function heroOffset(key) {
 function resetScene() {
   TRAVEL.forEach((k) => {
     pieces[k].classList.remove("is-flying");
-    gsap.set(pieces[k], heroOffset(k));
-  });
-
-  SETTLE.forEach(({ id, ox, oy }) => {
-    gsap.set(pieces[id], {
-      opacity: 0,
-      x: ox,
-      y: oy,
-      scale: 0.88,
+    gsap.set(pieces[k], {
+      ...heroOffset(k),
+      opacity: 1,
       transformOrigin: "50% 50%"
     });
   });
 
-  Object.values(figEls).forEach((el) => {
-    gsap.set(el, { clearProps: "all" });
-    /* re-apply layout after clearProps */
+  EXTEND.forEach(({ id, prop, origin }) => {
+    const state = {
+      opacity: 1,
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+      transformOrigin: origin
+    };
+    state[prop] = 0;
+    gsap.set(pieces[id], state);
   });
 
   FIGS.forEach((f) => {
@@ -156,12 +173,16 @@ function resetScene() {
       left: f.x,
       top: f.y,
       width: f.w,
-      height: f.h
+      height: f.h,
+      clearProps: "clipPath,filter"
     });
   });
 
   gsap.set([".l1", ".l2", ".l3", ".l4"], {
-    clearProps: "transform,opacity,filter,letterSpacing"
+    x: 0,
+    y: 0,
+    opacity: 1,
+    clearProps: "filter,letterSpacing,clipPath"
   });
 
   const hint = document.querySelector(".hint");
@@ -170,93 +191,51 @@ function resetScene() {
 
 resetScene();
 
-/** Build the shared choreography onto an empty timeline. */
 function buildSequence(tl) {
-  tl.to(".l1", {
-    y: -48,
-    opacity: 0,
-    filter: "blur(8px)",
-    letterSpacing: "12px",
-    ease: "power3.in",
-    duration: 1.1
-  }, 0.05);
+  /* ---- Typography: slide cleanly off-frame (no blur / dissolve) ---- */
+  tl.to(".l1", { y: -260, ease: "power3.in", duration: 0.95 }, 0.02);
+  tl.to(".l2", { x: 420, ease: "power3.in", duration: 0.95 }, 0.10);
+  tl.to(".l3", { x: -380, ease: "power3.in", duration: 0.9 }, 0.16);
+  tl.to(".l4", { y: 280, ease: "power3.in", duration: 1.0 }, 0.22);
 
-  tl.to(".l2", {
-    x: 56,
-    y: -24,
-    opacity: 0,
-    filter: "blur(7px)",
-    letterSpacing: "6px",
-    ease: "power3.in",
-    duration: 1.05
-  }, 0.18);
-
-  tl.to(".l3", {
-    x: -64,
-    opacity: 0,
-    filter: "blur(7px)",
-    letterSpacing: "10px",
-    ease: "power3.in",
-    duration: 1.0
-  }, 0.28);
-
-  tl.to(".l4", {
-    y: 56,
-    opacity: 0,
-    filter: "blur(9px)",
-    letterSpacing: "18px",
-    ease: "power2.in",
-    duration: 1.15
-  }, 0.36);
-
-  function releaseFig(id, at, vars, dur) {
+  /* ---- Figures: leave the frame fully opaque (no fade) ---- */
+  function exitFig(id, at, vars, dur) {
     tl.to(figEls[id], {
       ...vars,
-      ease: "power2.inOut",
+      opacity: 1,
+      ease: "power2.in",
       duration: dur
     }, at);
   }
 
+  /* Carriers release, then walk off left / right while solid. */
   tl.to(figEls["carry-left"], {
-    x: -18, y: 6, rotation: -3, duration: 0.35, ease: "sine.out"
-  }, 0.55);
-
+    x: -14, rotation: -2, duration: 0.28, ease: "sine.out"
+  }, 0.48);
   tl.to(figEls["carry-right"], {
-    x: 14, y: 8, rotation: 2, duration: 0.35, ease: "sine.out"
-  }, 0.58);
+    x: 12, rotation: 2, duration: 0.28, ease: "sine.out"
+  }, 0.52);
 
-  releaseFig("carry-left", 0.95, {
-    x: -160, y: 40, opacity: 0, scale: 0.94, rotation: -8
-  }, 1.35);
-
-  releaseFig("carry-right", 1.05, {
-    x: 120, y: 70, opacity: 0, scale: 0.93, rotation: 6
-  }, 1.4);
+  exitFig("carry-left", 0.82, { x: -320, y: 24, rotation: -4 }, 1.15);
+  exitFig("carry-right", 0.95, { x: -480, y: 36, rotation: 3 }, 1.35);
 
   tl.to(figEls.measure, {
-    x: -10, rotation: -4, duration: 0.4, ease: "sine.out"
-  }, 0.7);
-
-  releaseFig("measure", 1.15, {
-    x: 90, y: -50, opacity: 0, scale: 0.9, rotation: 8
-  }, 1.2);
+    x: -8, rotation: -3, duration: 0.28, ease: "sine.out"
+  }, 0.62);
+  exitFig("measure", 1.05, { x: 260, y: -40, rotation: 5 }, 1.05);
 
   tl.to(figEls["push-bar"], {
-    x: 12, duration: 0.3, ease: "sine.out"
-  }, 0.5);
+    x: 10, duration: 0.24, ease: "sine.out"
+  }, 0.42);
+  exitFig("push-bar", 0.72, { x: -280, y: 20, rotation: -3 }, 1.1);
 
-  releaseFig("push-bar", 0.85, {
-    x: -130, y: 30, opacity: 0, scale: 0.95, rotation: -5
-  }, 1.25);
-
+  /* Seated woman stays in front of the bar, then steps off with it. */
   tl.to(figEls.sit, {
-    y: 10, rotation: 2, duration: 0.45, ease: "sine.in"
-  }, 1.2);
-
-  releaseFig("sit", 1.55, {
-    y: 220, x: -30, opacity: 0, rotation: 12, scale: 0.96
+    y: 6, duration: 0.35, ease: "sine.in"
   }, 1.15);
+  exitFig("sit", 1.45, { y: 320, x: -24, rotation: 8 }, 1.05);
 
+  /* ---- Travelling bars ---- */
   function flyBar(key, opts) {
     const node = pieces[key];
     const { antiAt, anti, flyAt, flyDur, midRot, xEase, yEase } = opts;
@@ -305,96 +284,97 @@ function buildSequence(tl) {
     }, flyAt + flyDur * 0.18);
 
     tl.to(node, {
-      scaleX: 1.025,
-      scaleY: 1.025,
-      duration: 0.22,
+      scaleX: 1.02,
+      scaleY: 1.02,
+      duration: 0.2,
       ease: "power1.out"
-    }, land - 0.08);
+    }, land - 0.06);
 
     tl.to(node, {
       scaleX: 1,
       scaleY: 1,
-      duration: 0.35,
+      duration: 0.32,
       ease: "power3.out"
-    }, land + 0.12);
+    }, land + 0.1);
 
-    tl.call(() => node.classList.remove("is-flying"), null, land + 0.35);
+    tl.call(() => node.classList.remove("is-flying"), null, land + 0.3);
   }
 
   flyBar("v1", {
-    antiAt: 0.72,
-    anti: { x: -10, y: 14, rot: -2, dur: 0.28 },
-    flyAt: 1.05,
-    flyDur: 2.15,
-    midRot: -7,
+    antiAt: 0.68,
+    anti: { x: -8, y: 12, rot: -2, dur: 0.26 },
+    flyAt: 1.0,
+    flyDur: 2.1,
+    midRot: -6,
     xEase: "power3.inOut",
     yEase: "power2.inOut"
   });
 
   flyBar("bar4", {
-    antiAt: 1.35,
-    anti: { x: 16, y: 8, rot: 0.5, dur: 0.32 },
-    flyAt: 1.7,
-    flyDur: 1.95,
-    midRot: 2.5,
+    antiAt: 1.3,
+    anti: { x: 14, y: 6, rot: 0.4, dur: 0.3 },
+    flyAt: 1.65,
+    flyDur: 1.9,
+    midRot: 2,
     xEase: "power2.inOut",
     yEase: "power3.inOut"
   });
 
   flyBar("v4", {
-    antiAt: 1.1,
-    anti: { x: 8, y: -12, rot: 3, dur: 0.26 },
-    flyAt: 1.4,
-    flyDur: 1.85,
-    midRot: 9,
+    antiAt: 1.05,
+    anti: { x: 6, y: -10, rot: 2, dur: 0.24 },
+    flyAt: 1.35,
+    flyDur: 1.8,
+    midRot: 8,
     xEase: "power2.inOut",
     yEase: "power4.inOut"
   });
 
   flyBar("bar2", {
-    antiAt: 1.5,
-    anti: { x: -6, y: -10, rot: -1.5, dur: 0.3 },
-    flyAt: 1.85,
-    flyDur: 1.75,
-    midRot: -5,
+    antiAt: 1.45,
+    anti: { x: -5, y: -8, rot: -1.2, dur: 0.28 },
+    flyAt: 1.8,
+    flyDur: 1.7,
+    midRot: -4,
     xEase: "power3.inOut",
     yEase: "power2.inOut"
   });
 
-  [
-    { id: "con1", at: 3.05, dur: 0.55 },
-    { id: "bar1", at: 3.18, dur: 0.7 },
-    { id: "c1", at: 3.22, dur: 0.5 },
-    { id: "v2", at: 3.34, dur: 0.72 },
-    { id: "con2", at: 3.4, dur: 0.48 },
-    { id: "c3", at: 3.46, dur: 0.5 },
-    { id: "bar3", at: 3.55, dur: 0.75 },
-    { id: "v3", at: 3.62, dur: 0.7 },
-    { id: "con3", at: 3.78, dur: 0.45 },
-    { id: "c2", at: 3.88, dur: 0.55 }
-  ].forEach(({ id, at, dur }) => {
+  /* ---- Logo completion: strokes extend as continuous lines ---- */
+  const extensions = [
+    { id: "con1", at: 3.0, dur: 0.28 },
+    { id: "bar1", at: 3.12, dur: 0.42 },
+    { id: "c1", at: 3.14, dur: 0.26 },
+    { id: "v2", at: 3.26, dur: 0.44 },
+    { id: "con2", at: 3.28, dur: 0.26 },
+    { id: "bar3", at: 3.38, dur: 0.46 },
+    { id: "c3", at: 3.4, dur: 0.26 },
+    { id: "v3", at: 3.52, dur: 0.44 },
+    { id: "con3", at: 3.66, dur: 0.24 },
+    { id: "c2", at: 3.76, dur: 0.3 }
+  ];
+
+  const extendMap = Object.fromEntries(EXTEND.map((e) => [e.id, e]));
+
+  extensions.forEach(({ id, at, dur }) => {
+    const spec = extendMap[id];
     tl.to(pieces[id], {
-      opacity: 1,
-      x: 0,
-      y: 0,
-      scale: 1,
-      duration: dur,
-      ease: "power3.out"
+      [spec.prop]: 1,
+      ease: "power2.inOut",
+      duration: dur
     }, at);
   });
 
   const hint = document.querySelector(".hint");
   if (hint) {
-    tl.to(hint, { opacity: 0, duration: 0.6, ease: "power1.in" }, 0.2);
+    tl.to(hint, { opacity: 0, duration: 0.5, ease: "power1.in" }, 0.15);
   }
 
-  /* Hold on the finished mark. */
-  tl.to({}, { duration: MODE === "auto" ? 1.2 : 0.7 }, 4.5);
+  tl.to({}, { duration: MODE === "auto" ? 1.2 : 0.7 }, 4.4);
 }
 
 const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/* ---- mode: scroll ------------------------------------------------ */
 if (MODE === "scroll") {
   const tl = gsap.timeline({
     defaults: { ease: "none" },
@@ -417,7 +397,6 @@ if (MODE === "scroll") {
   }
 }
 
-/* ---- mode: auto -------------------------------------------------- */
 if (MODE === "auto") {
   const statusEl = document.getElementById("auto-status");
   const replayBtn = document.getElementById("btn-replay");
@@ -450,7 +429,6 @@ if (MODE === "auto") {
       return;
     }
 
-    /* Re-read start values from the reset scene, then play. */
     tl.invalidate().pause(0);
     gsap.delayedCall(0.55, () => tl.play(0));
   }
@@ -458,3 +436,4 @@ if (MODE === "auto") {
   if (replayBtn) replayBtn.addEventListener("click", playOnce);
   playOnce();
 }
+})();
