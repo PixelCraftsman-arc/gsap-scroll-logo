@@ -5,8 +5,10 @@
  *
  *   0.00 – 0.30  type + illustrations exit (staggered, accelerating)
  *   0.25 – 0.45  black elements detach — counter-move, gather momentum
- *   0.40 – 0.85  pieces travel; remaining strokes draw as continuous lines
- *   0.85 – 1.00  final snap, settle, logo lock-up
+ *   0.40 – 0.72  original pieces travel and lock into logo skeleton
+ *   0.75 – 0.90  finishing geometry extends from connected pieces (scale)
+ *   0.90 – 0.94  full lock-up, seamless swap to final mark
+ *   0.94 – 1.00  final logo held centred
  */
 
 (() => {
@@ -67,13 +69,13 @@
   const TRAVEL = ["bar2", "bar4", "v1", "v4"];
 
   const STROKE = {
-    /* Left glyph — fork from landed bar2, bridge from bar4 */
+    /* Left glyph — extensions from landed bar2 / bar4 */
     con1: { prop: "scaleY", origin: "50% 100%" },
     bar1: { prop: "scaleY", origin: "50% 100%" },
     bar3: { prop: "scaleY", origin: "50% 0%" },
     con2: { prop: "scaleX", origin: "0% 50%" },
     con3: { prop: "scaleX", origin: "0% 50%" },
-    /* Right glyph — rail + columns from v1, tie-in from v4 */
+    /* Right glyph — extensions from landed v1 / v4 */
     c1: { prop: "scaleY", origin: "50% 0%" },
     v2: { prop: "scaleY", origin: "50% 0%" },
     v3: { prop: "scaleY", origin: "50% 0%" },
@@ -202,12 +204,12 @@
    */
   function buildSequence(tl) {
     const DETACH = { start: 25, end: 45 };
-    const PHASE3 = { start: 40, end: 85 };
-    const SNAP = 85;
+    const TRAVEL_END = 72;
+    const EXT_START = 75;
+    const LOCKUP = 94;
 
     const accel = "power3.in";
     const glide = "power2.inOut";
-    const snapEase = "power4.out";
 
     /* —— Phase 1 (0 → 0.30): type + people exit —— */
     tl.to(".l1", { y: "-18vh", ease: accel, duration: 24 }, 0);
@@ -274,7 +276,7 @@
     detach("bar4", DETACH.start + 6, 7, { x: 14, y: 6, rot: 0.8 });
     detach("bar2", DETACH.start + 9, 6, { x: -8, y: -6, rot: -1.2 });
 
-    /* —— Phase 3 (0.40 → 0.85): travel + converge —— */
+    /* —— Phase 3 (0.40 → 0.72): original pieces travel —— */
     function converge(key, at, dur) {
       const node = pieces[key];
       tl.to(node, { x: 0, ease: glide, duration: dur }, at);
@@ -292,11 +294,12 @@
       );
     }
 
-    const travelDur = PHASE3.end - PHASE3.start - 6;
-    const v1At = PHASE3.start;
-    const v4At = PHASE3.start + 4;
-    const bar4At = PHASE3.start + 8;
-    const bar2At = PHASE3.start + 12;
+    const travelStart = 40;
+    const travelDur = TRAVEL_END - travelStart - 6;
+    const v1At = travelStart;
+    const v4At = travelStart + 2;
+    const bar4At = travelStart + 4;
+    const bar2At = travelStart + 6;
     const v1Dur = travelDur;
     const v4Dur = travelDur - 2;
     const bar4Dur = travelDur - 4;
@@ -307,9 +310,19 @@
     converge("bar4", bar4At, bar4Dur);
     converge("bar2", bar2At, bar2Dur);
 
+    tl.set(
+      TRAVEL.map((k) => pieces[k]),
+      { x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 },
+      TRAVEL_END
+    );
+
+    tl.call(() => {
+      TRAVEL.forEach((k) => pieces[k]?.classList.remove("is-flying"));
+    }, null, TRAVEL_END);
+
     /*
-     * Remaining logo strokes draw as continuous lines from landed pieces —
-     * linear under scrub, overlapping segments, origins on shared edges.
+     * Phase 3b (0.75 → 0.90): finishing geometry — already at final positions,
+     * hidden until anchors lock, then scale out from shared edges (ease none).
      */
     function drawStrokes(at, segments) {
       segments.forEach(([id, offset, dur]) => {
@@ -322,70 +335,42 @@
       });
     }
 
-    const LAND = 0.42;
-
-    /* Right mark: top rail out of v1, columns descend as one pour */
-    drawStrokes(v1At + v1Dur * LAND, [
-      ["c1", 0, 7],
-      ["v2", 0.6, 32],
-      ["v3", 0.6, 32]
+    /* Left E — fork up/down from bar2, bridges from bar4 */
+    drawStrokes(EXT_START, [
+      ["con1", 0, 5],
+      ["bar1", 0.6, 10],
+      ["bar3", 0, 10]
     ]);
 
-    drawStrokes(v4At + v4Dur * LAND, [["c3", 0, 9]]);
-
-    drawStrokes(v1At + v1Dur * 0.58, [["c2", 0, 16]]);
-
-    /* Left mark: fork up/down from bar2, bridge toward bar4 */
-    drawStrokes(bar2At + bar2Dur * LAND, [
-      ["con1", 0, 8],
-      ["bar1", 1, 24],
-      ["bar3", 0, 24],
-      ["con2", 16, 9]
+    drawStrokes(EXT_START + 1, [
+      ["con2", 0.8, 5],
+      ["con3", 0, 5]
     ]);
 
-    drawStrokes(bar4At + bar4Dur * LAND, [["con3", 0, 10]]);
+    /* Right M — columns pour from v1 rail, cap from v4, base tie-in last */
+    drawStrokes(EXT_START + 0.5, [
+      ["c1", 0, 4],
+      ["v2", 0.7, 12],
+      ["v3", 1.1, 12]
+    ]);
 
-    tl.call(() => {
-      ["bar2", "bar4", "v1", "v4"].forEach((k) => pieces[k]?.classList.remove("is-flying"));
-    }, null, PHASE3.end);
+    drawStrokes(EXT_START + 1.5, [["c3", 0, 4]]);
 
-    /* —— Phase 4 (0.85 → 1.00): snap + settle —— */
+    drawStrokes(EXT_START + 7, [["c2", 0, 8]]);
+
+    /* —— Phase 4 (0.88 → 1.00): lock-up + final mark —— */
     if (bgTwo) {
-      tl.to(bgTwo, { opacity: 1, ease: "power1.inOut", duration: 10 }, SNAP);
+      tl.to(bgTwo, { opacity: 1, ease: "none", duration: 6 }, 88);
     }
 
     const allPieceNodes = Object.keys(LOGO).map((k) => pieces[k]);
 
-    /* Final alignment snap on the travelling pieces */
-    tl.to(allPieceNodes, {
-      x: 0,
-      y: 0,
-      scaleX: 1,
-      scaleY: 1,
-      rotation: 0,
-      ease: snapEase,
-      duration: 5
-    }, SNAP);
-
     if (logoFinal) {
-      tl.to(logoFinal, { autoAlpha: 1, ease: "power1.out", duration: 4 }, SNAP + 4);
-      tl.to(allPieceNodes, { autoAlpha: 0, ease: "power1.out", duration: 3 }, SNAP + 6);
-      tl.fromTo(
-        logoFinal,
-        { scale: 1.018 },
-        { scale: 1, ease: "power2.out", duration: 8 },
-        SNAP + 6
-      );
-    } else {
-      tl.fromTo(
-        allPieceNodes,
-        { scale: 1.018 },
-        { scale: 1, ease: "power2.out", duration: 8 },
-        SNAP + 6
-      );
+      tl.set(logoFinal, { autoAlpha: 1 }, LOCKUP);
+      tl.set(allPieceNodes, { autoAlpha: 0 }, LOCKUP);
     }
 
-    tl.to({}, { duration: 6 }, 94);
+    tl.to({}, { duration: 6 }, LOCKUP);
   }
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -401,6 +386,7 @@
         pin: true,
         scrub: 1.2,
         anticipatePin: 1,
+        invalidateOnRefresh: true,
         onUpdate: (self) => {
           if (progressEl) {
             progressEl.textContent = Math.round(self.progress * 100) + "%";
