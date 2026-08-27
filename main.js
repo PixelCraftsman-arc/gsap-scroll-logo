@@ -211,18 +211,24 @@
     const accel = "power3.in";
     const glide = "power2.inOut";
 
-    /* —— Phase 1 (0 → 0.30): type + people exit —— */
+    /*
+     * Typography: drift off-frame first, then a longer sine tail fade so letters
+     * do not pop off between ~29–31% scroll.
+     */
+    const typeFade = "sine.inOut";
+    const typeFadeDur = 12;
+
     tl.to(".l1", { y: "-18vh", ease: accel, duration: 24 }, 0);
-    tl.to(".l1", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 24);
+    tl.to(".l1", { autoAlpha: 0, ease: typeFade, duration: typeFadeDur }, 16);
 
     tl.to(".l2", { x: "20vw", y: "-6vh", ease: accel, duration: 22 }, 4);
-    tl.to(".l2", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 26);
+    tl.to(".l2", { autoAlpha: 0, ease: typeFade, duration: typeFadeDur }, 18);
 
     tl.to(".l3", { x: "-18vw", y: "8vh", ease: accel, duration: 20 }, 7);
-    tl.to(".l3", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 27);
+    tl.to(".l3", { autoAlpha: 0, ease: typeFade, duration: typeFadeDur }, 20);
 
     tl.to(".l4", { y: "18vh", ease: accel, duration: 18 }, 10);
-    tl.to(".l4", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 28);
+    tl.to(".l4", { autoAlpha: 0, ease: typeFade, duration: typeFadeDur }, 22);
 
     /*
      * People: design-pixel drift (not vw) so motion stays proportional inside
