@@ -233,6 +233,15 @@
       tl.to(figEls[id], { ...move, ease: figEase, duration: dur }, at);
     });
 
+    /*
+     * Central bar figures stay in frame as pieces travel — fade them out
+     * before stroke extension assembles the logo (phase 3 cascade ~52+).
+     */
+    const centralFigs = ["carry-right", "sit"];
+    centralFigs.forEach((id, i) => {
+      tl.to(figEls[id], { autoAlpha: 0, ease: "power1.in", duration: 12 }, 36 + i * 2);
+    });
+
     const hint = document.querySelector(".hint");
     if (hint) tl.to(hint, { opacity: 0, duration: 6, ease: "power1.out" }, 4);
 
@@ -347,6 +356,7 @@
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   if (MODE === "scroll") {
+    const progressEl = document.getElementById("scroll-progress");
     const tl = gsap.timeline({
       defaults: { ease: "none" },
       scrollTrigger: {
@@ -355,7 +365,12 @@
         end: "+=620%",
         pin: true,
         scrub: 1.2,
-        anticipatePin: 1
+        anticipatePin: 1,
+        onUpdate: (self) => {
+          if (progressEl) {
+            progressEl.textContent = Math.round(self.progress * 100) + "%";
+          }
+        }
       }
     });
     buildSequence(tl);

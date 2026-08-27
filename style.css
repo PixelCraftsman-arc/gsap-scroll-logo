@@ -186,6 +186,19 @@ body {
   pointer-events: none;
 }
 
+.scroll-progress {
+  position: fixed;
+  top: 3rem;
+  right: 1.25rem;
+  z-index: 40;
+  margin: 0;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  color: #555;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hint {
     display: none;
