@@ -143,35 +143,6 @@ body {
   object-position: center;
 }
 
-.after {
-  min-height: 70vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10vh 6vw;
-  background: var(--bg);
-}
-
-.after .col {
-  max-width: 34rem;
-}
-
-.after h2 {
-  margin: 0 0 1rem;
-  font-weight: 300;
-  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-}
-
-.after p {
-  margin: 0;
-  font-weight: 300;
-  font-size: clamp(0.95rem, 1.2vw, 1.125rem);
-  line-height: 1.65;
-  color: #444;
-}
-
 .hint {
   position: fixed;
   left: 50%;
