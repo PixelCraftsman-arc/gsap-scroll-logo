@@ -194,7 +194,6 @@
    * Duration = 100 → maps 1:1 to scroll progress.
    */
   function buildSequence(tl) {
-    const EXIT = 30;
     const DETACH = { start: 25, end: 45 };
     const PHASE3 = { start: 40, end: 85 };
     const SNAP = 85;
