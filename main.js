@@ -5,9 +5,9 @@
  *
  *   0.00 – 0.30  type + illustrations exit (staggered, accelerating)
  *   0.25 – 0.45  black elements detach — counter-move, gather momentum
- *   0.40 – 0.72  original pieces travel and lock into logo skeleton
- *   0.75 – 0.90  finishing geometry extends from connected pieces (scale)
- *   0.90 – 0.94  full lock-up, seamless swap to final mark
+ *   0.40 – 0.66  original pieces travel and lock into logo skeleton
+ *   0.67 – 0.88  finishing geometry extends from connected pieces (scale)
+ *   0.88 – 0.94  full lock-up, seamless swap to final mark
  *   0.94 – 1.00  final logo held centred
  */
 
@@ -204,8 +204,8 @@
    */
   function buildSequence(tl) {
     const DETACH = { start: 25, end: 45 };
-    const TRAVEL_END = 72;
-    const EXT_START = 75;
+    const TRAVEL_END = 66;
+    const EXT_START = 67;
     const LOCKUP = 94;
 
     const accel = "power3.in";
@@ -282,7 +282,7 @@
     detach("bar4", DETACH.start + 6, 7, { x: 14, y: 6, rot: 0.8 });
     detach("bar2", DETACH.start + 9, 6, { x: -8, y: -6, rot: -1.2 });
 
-    /* —— Phase 3 (0.40 → 0.72): original pieces travel —— */
+    /* —— Phase 3 (0.40 → 0.66): original pieces travel —— */
     function converge(key, at, dur) {
       const node = pieces[key];
       tl.to(node, { x: 0, ease: glide, duration: dur }, at);
@@ -327,7 +327,7 @@
     }, null, TRAVEL_END);
 
     /*
-     * Phase 3b (0.75 → 0.90): finishing geometry — already at final positions,
+     * Phase 3b (0.67 → 0.88): finishing geometry — already at final positions,
      * hidden until anchors lock, then scale out from shared edges (ease none).
      */
     function drawStrokes(at, segments) {
@@ -362,11 +362,11 @@
 
     drawStrokes(EXT_START + 1.5, [["c3", 0, 4]]);
 
-    drawStrokes(EXT_START + 7, [["c2", 0, 8]]);
+    drawStrokes(EXT_START + 6, [["c2", 0, 8]]);
 
-    /* —— Phase 4 (0.88 → 1.00): lock-up + final mark —— */
+    /* —— Phase 4 (0.86 → 1.00): lock-up + final mark —— */
     if (bgTwo) {
-      tl.to(bgTwo, { opacity: 1, ease: "none", duration: 6 }, 88);
+      tl.to(bgTwo, { opacity: 1, ease: "none", duration: 6 }, 86);
     }
 
     const allPieceNodes = Object.keys(LOGO).map((k) => pieces[k]);
