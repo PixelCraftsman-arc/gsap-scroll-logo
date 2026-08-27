@@ -1,13 +1,12 @@
 /**
  * Hero → logo sequence (scroll | auto)
  *
- * Scroll-progress structure (timeline units 0–100 ≈ %):
- *   0–15%   hold — composition stays readable
- *  10–35%   typography pulls away (opacity only at the end)
- *  15–45%   people slide outward — cropped by the viewport, no fade
- *  20–80%   black rectangles travel (overlaps people leaving)
- *  55–88%   remaining strokes extend as continuous lines
- *  75–100%  second background takes over; final logo settles + seam swap
+ * Timeline units 0–100 = scroll progress 0–1.
+ *
+ *   0.00 – 0.30  type + illustrations exit (staggered, accelerating)
+ *   0.25 – 0.45  black elements detach — counter-move, gather momentum
+ *   0.40 – 0.85  pieces travel and converge
+ *   0.85 – 1.00  final snap, settle, logo lock-up
  */
 
 (() => {
@@ -192,114 +191,154 @@
   resetScene();
 
   /**
-   * Timeline duration = 100 so positions map 1:1 to scroll %.
+   * Duration = 100 → maps 1:1 to scroll progress.
    */
   function buildSequence(tl) {
-    /* —— 0–15%: intentional hold (composition readable) —— */
-    tl.to({}, { duration: 15 }, 0);
+    const EXIT = 30;
+    const DETACH = { start: 25, end: 45 };
+    const PHASE3 = { start: 40, end: 85 };
+    const SNAP = 85;
 
-    /* —— 10–35%: typography pulls away; opacity only at the tail —— */
-    /* Top lines travel up / out; bottom lines travel down / out */
-    tl.to(".l1", { y: "-18vh", ease: "power2.inOut", duration: 22 }, 10);
-    tl.to(".l1", { autoAlpha: 0, ease: "power1.in", duration: 5 }, 30);
+    const accel = "power3.in";
+    const glide = "power2.inOut";
+    const snapEase = "power4.out";
 
-    tl.to(".l2", { x: "22vw", y: "-6vh", ease: "power2.inOut", duration: 22 }, 11);
-    tl.to(".l2", { autoAlpha: 0, ease: "power1.in", duration: 5 }, 31);
+    /* —— Phase 1 (0 → 0.30): type + people exit —— */
+    tl.to(".l1", { y: "-18vh", ease: accel, duration: 24 }, 0);
+    tl.to(".l1", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 24);
 
-    tl.to(".l3", { x: "-20vw", y: "8vh", ease: "power2.inOut", duration: 22 }, 12);
-    tl.to(".l3", { autoAlpha: 0, ease: "power1.in", duration: 5 }, 32);
+    tl.to(".l2", { x: "20vw", y: "-6vh", ease: accel, duration: 22 }, 4);
+    tl.to(".l2", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 26);
 
-    tl.to(".l4", { y: "20vh", ease: "power2.inOut", duration: 23 }, 12);
-    tl.to(".l4", { autoAlpha: 0, ease: "power1.in", duration: 5 }, 33);
+    tl.to(".l3", { x: "-18vw", y: "8vh", ease: accel, duration: 20 }, 7);
+    tl.to(".l3", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 27);
 
-    /* —— 15–45%: people slide outward — no fade; viewport crops them —— */
-    const people = {
-      "carry-left": { x: "-22vw", y: "8vh", rotation: -2 },
-      "push-bar": { x: "-20vw", y: "10vh", rotation: -1.5 },
-      "carry-right": { x: "18vw", y: "7vh", rotation: 2 },
-      measure: { x: "24vw", y: "5vh", rotation: 2.5 },
-      sit: { x: "16vw", y: "12vh", rotation: 1.5 }
-    };
+    tl.to(".l4", { y: "18vh", ease: accel, duration: 18 }, 10);
+    tl.to(".l4", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 28);
 
-    Object.keys(people).forEach((id, i) => {
-      tl.to(
-        figEls[id],
-        {
-          ...people[id],
-          ease: "power2.inOut",
-          duration: 28
-        },
-        15 + i * 1.2
-      );
+    const figExits = [
+      ["push-bar", 6, { x: "-22vw", y: "10vh", rotation: -2 }],
+      ["carry-left", 10, { x: "-24vw", y: "8vh", rotation: -2.5 }],
+      ["measure", 14, { x: "26vw", y: "6vh", rotation: 2.5 }],
+      ["carry-right", 18, { x: "20vw", y: "9vh", rotation: 2 }],
+      ["sit", 22, { x: "18vw", y: "14vh", rotation: 1.5 }]
+    ];
+
+    figExits.forEach(([id, at, move]) => {
+      tl.to(figEls[id], { ...move, ease: accel, duration: 20 }, at);
     });
 
-    /* —— 20–80%: rectangles detach & travel while people still visible —— */
-    function fly(key, start, dur) {
+    tl.set(Object.values(figEls), { autoAlpha: 0 }, EXIT);
+
+    const hint = document.querySelector(".hint");
+    if (hint) tl.to(hint, { opacity: 0, duration: 6, ease: "power1.out" }, 4);
+
+    /* —— Phase 2 (0.25 → 0.45): detach + counter-move —— */
+    function detach(key, at, dur, anti) {
       const node = pieces[key];
-      tl.call(() => node.classList.add("is-flying"), null, start);
-      tl.to(node, { x: 0, ease: "power2.inOut", duration: dur }, start);
-      tl.to(node, { y: 0, ease: "power2.inOut", duration: dur }, start);
+      tl.call(() => node.classList.add("is-flying"), null, at);
+      tl.to(
+        node,
+        {
+          x: "+=" + anti.x,
+          y: "+=" + anti.y,
+          rotation: "+=" + anti.rot,
+          ease: "sine.out",
+          duration: dur
+        },
+        at
+      );
+    }
+
+    detach("v1", DETACH.start, 8, { x: -12, y: 10, rot: -2 });
+    detach("v4", DETACH.start + 3, 7, { x: 10, y: -8, rot: 2 });
+    detach("bar4", DETACH.start + 6, 7, { x: 14, y: 6, rot: 0.8 });
+    detach("bar2", DETACH.start + 9, 6, { x: -8, y: -6, rot: -1.2 });
+
+    /* —— Phase 3 (0.40 → 0.85): travel + converge —— */
+    function converge(key, at, dur) {
+      const node = pieces[key];
+      tl.to(node, { x: 0, ease: glide, duration: dur }, at);
+      tl.to(node, { y: 0, ease: glide, duration: dur }, at);
       tl.to(
         node,
         {
           scaleX: 1,
           scaleY: 1,
           rotation: 0,
-          ease: "power2.inOut",
-          duration: dur * 0.88
+          ease: glide,
+          duration: dur * 0.9
         },
-        start + dur * 0.06
+        at + dur * 0.05
       );
-      tl.call(() => node.classList.remove("is-flying"), null, start + dur);
     }
 
-    fly("v1", 20, 52);
-    fly("v4", 24, 50);
-    fly("bar4", 28, 48);
-    fly("bar2", 32, 46);
+    const travelDur = PHASE3.end - PHASE3.start - 6;
+    converge("v1", PHASE3.start, travelDur);
+    converge("v4", PHASE3.start + 4, travelDur - 2);
+    converge("bar4", PHASE3.start + 8, travelDur - 4);
+    converge("bar2", PHASE3.start + 12, travelDur - 6);
 
-    /* —— 55–88%: remaining strokes extend as continuous lines —— */
+    /* Remaining strokes extend while pieces converge */
     const cascade = [
-      ["con1", 55, 8],
-      ["bar1", 58, 10],
-      ["c1", 59, 7],
-      ["v2", 62, 11],
-      ["con2", 64, 7],
-      ["bar3", 67, 11],
-      ["c3", 68, 7],
-      ["v3", 71, 11],
-      ["con3", 76, 6],
-      ["c2", 80, 8]
+      ["con1", 52, 6],
+      ["bar1", 55, 8],
+      ["c1", 56, 5],
+      ["v2", 59, 8],
+      ["con2", 61, 5],
+      ["bar3", 64, 8],
+      ["c3", 66, 5],
+      ["v3", 69, 8],
+      ["con3", 74, 5],
+      ["c2", 78, 6]
     ];
     const byId = Object.fromEntries(EXTEND.map((e) => [e.id, e]));
     cascade.forEach(([id, at, dur]) => {
       const spec = byId[id];
-      tl.to(
-        pieces[id],
-        { [spec.prop]: 1, ease: "power1.inOut", duration: dur },
-        at
-      );
+      tl.to(pieces[id], { [spec.prop]: 1, ease: "power1.inOut", duration: dur }, at);
     });
 
-    /* —— 75–100%: second background dominates —— */
+    tl.call(() => {
+      ["bar2", "bar4", "v1", "v4"].forEach((k) => pieces[k]?.classList.remove("is-flying"));
+    }, null, PHASE3.end);
+
+    /* —— Phase 4 (0.85 → 1.00): snap + settle —— */
     if (bgTwo) {
-      tl.to(bgTwo, { opacity: 1, ease: "power1.inOut", duration: 22 }, 75);
+      tl.to(bgTwo, { opacity: 1, ease: "power1.inOut", duration: 10 }, SNAP);
     }
 
-    /* —— 92–100%: swap pieces → final mark (kills 1px seams) —— */
     const allPieceNodes = Object.keys(LOGO).map((k) => pieces[k]);
+
+    /* Final alignment snap on the travelling pieces */
+    tl.to(allPieceNodes, {
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      rotation: 0,
+      ease: snapEase,
+      duration: 5
+    }, SNAP);
+
     if (logoFinal) {
-      tl.to(logoFinal, { autoAlpha: 1, ease: "power1.out", duration: 5 }, 92);
-      tl.to(allPieceNodes, { autoAlpha: 0, ease: "power1.out", duration: 4 }, 94);
+      tl.to(logoFinal, { autoAlpha: 1, ease: "power1.out", duration: 4 }, SNAP + 4);
+      tl.to(allPieceNodes, { autoAlpha: 0, ease: "power1.out", duration: 3 }, SNAP + 6);
+      tl.fromTo(
+        logoFinal,
+        { scale: 1.018 },
+        { scale: 1, ease: "power2.out", duration: 8 },
+        SNAP + 6
+      );
+    } else {
+      tl.fromTo(
+        allPieceNodes,
+        { scale: 1.018 },
+        { scale: 1, ease: "power2.out", duration: 8 },
+        SNAP + 6
+      );
     }
 
-    /* Ensure people are gone from hit-testing once cropped away */
-    tl.set(Object.values(figEls), { autoAlpha: 0 }, 48);
-
-    const hint = document.querySelector(".hint");
-    if (hint) tl.to(hint, { opacity: 0, duration: 8, ease: "power1.out" }, 8);
-
-    tl.to({}, { duration: 2 }, 98);
+    tl.to({}, { duration: 6 }, 94);
   }
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
