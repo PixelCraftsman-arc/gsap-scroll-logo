@@ -159,6 +159,7 @@
         y: 0,
         rotation: 0,
         opacity: 1,
+        autoAlpha: 1,
         scale: 1,
         left: f.x,
         top: f.y,
@@ -167,7 +168,12 @@
       });
     });
 
-    gsap.set([".l1", ".l2", ".l3", ".l4"], { x: 0, y: 0, opacity: 1 });
+    gsap.set([".l1", ".l2", ".l3", ".l4"], {
+      x: 0,
+      y: 0,
+      opacity: 1,
+      autoAlpha: 1
+    });
 
     const hint = document.querySelector(".hint");
     if (hint) gsap.set(hint, { opacity: 1 });
@@ -185,13 +191,18 @@
       6.2–7.0   hold
     */
 
-    /* —— 1. Type: soft directional exit, still fully solid —— */
-    tl.to(".l1", { y: -300, ease: "power2.inOut", duration: 1.15 }, 0);
-    tl.to(".l2", { x: 460, ease: "power2.inOut", duration: 1.15 }, 0.12);
-    tl.to(".l3", { x: -420, ease: "power2.inOut", duration: 1.1 }, 0.2);
-    tl.to(".l4", { y: 300, ease: "power2.inOut", duration: 1.2 }, 0.28);
+    /* —— 1. Type: slide fully off the 1280×741 stage, then hide —— */
+    function clearLine(sel, at, move, dur) {
+      tl.to(sel, { ...move, ease: "power2.inOut", duration: dur }, at);
+      tl.set(sel, { autoAlpha: 0 }, at + dur);
+    }
 
-    /* —— 2. Figures: exit as solid characters, no fade —— */
+    clearLine(".l1", 0, { y: -520 }, 1.15);
+    clearLine(".l2", 0.12, { x: 900 }, 1.15);
+    clearLine(".l3", 0.2, { x: -720 }, 1.1);
+    clearLine(".l4", 0.28, { y: 520 }, 1.2);
+
+    /* —— 2. Figures: leave fully past the frame, then hide —— */
     function leave(id, at, move, dur) {
       tl.to(figEls[id], {
         ...move,
@@ -199,13 +210,14 @@
         ease: "power2.inOut",
         duration: dur
       }, at);
+      tl.set(figEls[id], { autoAlpha: 0 }, at + dur);
     }
 
-    leave("push-bar", 0.95, { x: -340, y: 10 }, 1.25);
-    leave("carry-left", 1.05, { x: -360, y: 16 }, 1.3);
-    leave("measure", 1.15, { x: 300, y: -30 }, 1.2);
-    leave("carry-right", 1.25, { x: -520, y: 20 }, 1.45);
-    leave("sit", 1.55, { y: 360, x: -20 }, 1.2);
+    leave("push-bar", 0.95, { x: -480, y: 10 }, 1.25);
+    leave("carry-left", 1.05, { x: -500, y: 16 }, 1.3);
+    leave("measure", 1.15, { x: 420, y: -80 }, 1.2);
+    leave("carry-right", 1.25, { x: -700, y: 20 }, 1.45);
+    leave("sit", 1.55, { y: 560, x: -20 }, 1.25);
 
     /* —— 3. Bars: calm travel, no spin gimmicks / overshoot —— */
     function fly(key, at, dur) {
