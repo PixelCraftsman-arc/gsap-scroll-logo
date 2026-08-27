@@ -44,6 +44,26 @@ body {
   overflow: hidden;
 }
 
+.bg-one,
+.bg-two {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bg-one {
+  background: var(--bg);
+  z-index: 0;
+}
+
+/* Second screen environment — gradually replaces the hero field */
+.bg-two {
+  z-index: 1;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 48%, #ffffff 0%, #f3f3f3 55%, #ececec 100%);
+  opacity: 0;
+}
+
 .canvas {
   position: absolute;
   top: 50%;
@@ -53,6 +73,7 @@ body {
   margin: -370.5px 0 0 -640px;
   transform-origin: 50% 50%;
   overflow: hidden;
+  z-index: 2;
 }
 
 .line {
@@ -106,6 +127,20 @@ body {
 .piece.is-flying {
   z-index: 5;
   box-shadow: none;
+}
+
+.logo-final {
+  position: absolute;
+  left: 368px;
+  top: 238px;
+  width: 542px;
+  height: 266px;
+  z-index: 7;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  object-fit: contain;
+  object-position: center;
 }
 
 .after {

@@ -1,7 +1,13 @@
 /**
- * Hero → logo sequence (scroll | auto).
+ * Hero → logo sequence (scroll | auto)
  *
- * Clear phases, opaque figures, continuous logo stroke growth.
+ * Scroll-progress structure (timeline units 0–100 ≈ %):
+ *   0–15%   hold — composition stays readable
+ *  10–35%   typography pulls away (opacity only at the end)
+ *  15–45%   people slide outward — cropped by the viewport, no fade
+ *  20–80%   black rectangles travel (overlaps people leaving)
+ *  55–88%   remaining strokes extend as continuous lines
+ *  75–100%  second background takes over; final logo settles + seam swap
  */
 
 (() => {
@@ -15,6 +21,8 @@
 
   const pieces = {};
   const figEls = {};
+  const logoFinal = document.getElementById("logo-final");
+  const bgTwo = document.querySelector(".bg-two");
 
   const LOGO = {
     bar1: { x: 368, y: 238, w: 267, h: 61 },
@@ -50,16 +58,15 @@
   };
 
   const FIGS = [
-    { id: "carry-left", src: "fig-push-left", x: 75, y: 197, w: 106, h: 186, layer: "front" },
-    { id: "carry-right", src: "fig-carry-right", x: 414, y: 190, w: 109, h: 193, layer: "front" },
-    { id: "sit", src: "fig-sit", x: 710, y: 298, w: 116, h: 181, layer: "over-bar" },
-    { id: "push-bar", src: "fig-push-bar", x: 96, y: 446, w: 98, h: 204, layer: "front" },
-    { id: "measure", src: "fig-measure", x: 1044, y: 70, w: 102, h: 144, layer: "front" }
+    { id: "carry-left", src: "fig-push-left", x: 75, y: 197, w: 106, h: 186, layer: "front", side: "left" },
+    { id: "carry-right", src: "fig-carry-right", x: 414, y: 190, w: 109, h: 193, layer: "front", side: "right" },
+    { id: "sit", src: "fig-sit", x: 710, y: 298, w: 116, h: 181, layer: "over-bar", side: "right" },
+    { id: "push-bar", src: "fig-push-bar", x: 96, y: 446, w: 98, h: 204, layer: "front", side: "left" },
+    { id: "measure", src: "fig-measure", x: 1044, y: 70, w: 102, h: 144, layer: "front", side: "right" }
   ];
 
   const TRAVEL = ["bar2", "bar4", "v1", "v4"];
 
-  /* Grow from the edge that touches the already-landed neighbour. */
   const EXTEND = [
     { id: "con1", prop: "scaleY", origin: "50% 100%" },
     { id: "bar1", prop: "scaleY", origin: "50% 100%" },
@@ -101,11 +108,13 @@
     img.src = "img/" + f.src + ".png?v=4";
     img.alt = "";
     img.draggable = false;
-    img.decode && img.decode().catch(() => {});
     wrap.appendChild(img);
     canvas.appendChild(wrap);
     figEls[f.id] = wrap;
   });
+
+  /* Keep final mark above pieces once swapped in */
+  if (logoFinal) canvas.appendChild(logoFinal);
 
   function fit() {
     const s = Math.min(window.innerWidth / DW, window.innerHeight / DH);
@@ -134,14 +143,14 @@
       pieces[k].classList.remove("is-flying");
       gsap.set(pieces[k], {
         ...heroOffset(k),
-        opacity: 1,
+        autoAlpha: 1,
         transformOrigin: "50% 50%"
       });
     });
 
     EXTEND.forEach(({ id, prop, origin }) => {
       const state = {
-        opacity: 1,
+        autoAlpha: 1,
         x: 0,
         y: 0,
         scaleX: 1,
@@ -158,7 +167,6 @@
         x: 0,
         y: 0,
         rotation: 0,
-        opacity: 1,
         autoAlpha: 1,
         scale: 1,
         left: f.x,
@@ -171,9 +179,11 @@
     gsap.set([".l1", ".l2", ".l3", ".l4"], {
       x: 0,
       y: 0,
-      opacity: 1,
       autoAlpha: 1
     });
+
+    if (logoFinal) gsap.set(logoFinal, { autoAlpha: 0 });
+    if (bgTwo) gsap.set(bgTwo, { opacity: 0 });
 
     const hint = document.querySelector(".hint");
     if (hint) gsap.set(hint, { opacity: 1 });
@@ -181,50 +191,54 @@
 
   resetScene();
 
+  /**
+   * Timeline duration = 100 so positions map 1:1 to scroll %.
+   */
   function buildSequence(tl) {
-    /*
-      Phase timing (timeline seconds):
-      0.0–1.2   type clears
-      0.9–2.4   figures leave (opaque)
-      2.0–4.6   bars travel + settle
-      4.5–6.2   logo strokes extend
-      6.2–7.0   hold
-    */
+    /* —— 0–15%: intentional hold (composition readable) —— */
+    tl.to({}, { duration: 15 }, 0);
 
-    /* —— 1. Type: slide fully off the 1280×741 stage, then hide —— */
-    function clearLine(sel, at, move, dur) {
-      tl.to(sel, { ...move, ease: "power2.inOut", duration: dur }, at);
-      tl.set(sel, { autoAlpha: 0 }, at + dur);
-    }
+    /* —— 10–35%: typography pulls away; opacity only at the tail —— */
+    /* Top lines travel up / out; bottom lines travel down / out */
+    tl.to(".l1", { y: "-18vh", ease: "power2.inOut", duration: 22 }, 10);
+    tl.to(".l1", { autoAlpha: 0, ease: "power1.in", duration: 5 }, 30);
 
-    clearLine(".l1", 0, { y: -520 }, 1.15);
-    clearLine(".l2", 0.12, { x: 900 }, 1.15);
-    clearLine(".l3", 0.2, { x: -720 }, 1.1);
-    clearLine(".l4", 0.28, { y: 520 }, 1.2);
+    tl.to(".l2", { x: "22vw", y: "-6vh", ease: "power2.inOut", duration: 22 }, 11);
+    tl.to(".l2", { autoAlpha: 0, ease: "power1.in", duration: 5 }, 31);
 
-    /* —— 2. Figures: leave fully past the frame, then hide —— */
-    function leave(id, at, move, dur) {
-      tl.to(figEls[id], {
-        ...move,
-        opacity: 1,
-        ease: "power2.inOut",
-        duration: dur
-      }, at);
-      tl.set(figEls[id], { autoAlpha: 0 }, at + dur);
-    }
+    tl.to(".l3", { x: "-20vw", y: "8vh", ease: "power2.inOut", duration: 22 }, 12);
+    tl.to(".l3", { autoAlpha: 0, ease: "power1.in", duration: 5 }, 32);
 
-    leave("push-bar", 0.95, { x: -480, y: 10 }, 1.25);
-    leave("carry-left", 1.05, { x: -500, y: 16 }, 1.3);
-    leave("measure", 1.15, { x: 420, y: -80 }, 1.2);
-    leave("carry-right", 1.25, { x: -700, y: 20 }, 1.45);
-    leave("sit", 1.55, { y: 560, x: -20 }, 1.25);
+    tl.to(".l4", { y: "20vh", ease: "power2.inOut", duration: 23 }, 12);
+    tl.to(".l4", { autoAlpha: 0, ease: "power1.in", duration: 5 }, 33);
 
-    /* —— 3. Bars: calm travel, no spin gimmicks / overshoot —— */
-    function fly(key, at, dur) {
+    /* —— 15–45%: people slide outward — no fade; viewport crops them —— */
+    const people = {
+      "carry-left": { x: "-22vw", y: "8vh", rotation: -2 },
+      "push-bar": { x: "-20vw", y: "10vh", rotation: -1.5 },
+      "carry-right": { x: "18vw", y: "7vh", rotation: 2 },
+      measure: { x: "24vw", y: "5vh", rotation: 2.5 },
+      sit: { x: "16vw", y: "12vh", rotation: 1.5 }
+    };
+
+    Object.keys(people).forEach((id, i) => {
+      tl.to(
+        figEls[id],
+        {
+          ...people[id],
+          ease: "power2.inOut",
+          duration: 28
+        },
+        15 + i * 1.2
+      );
+    });
+
+    /* —— 20–80%: rectangles detach & travel while people still visible —— */
+    function fly(key, start, dur) {
       const node = pieces[key];
-      tl.call(() => node.classList.add("is-flying"), null, at);
-      tl.to(node, { x: 0, ease: "power2.inOut", duration: dur }, at);
-      tl.to(node, { y: 0, ease: "power2.inOut", duration: dur }, at);
+      tl.call(() => node.classList.add("is-flying"), null, start);
+      tl.to(node, { x: 0, ease: "power2.inOut", duration: dur }, start);
+      tl.to(node, { y: 0, ease: "power2.inOut", duration: dur }, start);
       tl.to(
         node,
         {
@@ -232,32 +246,31 @@
           scaleY: 1,
           rotation: 0,
           ease: "power2.inOut",
-          duration: dur * 0.85
+          duration: dur * 0.88
         },
-        at + dur * 0.08
+        start + dur * 0.06
       );
-      tl.call(() => node.classList.remove("is-flying"), null, at + dur + 0.05);
+      tl.call(() => node.classList.remove("is-flying"), null, start + dur);
     }
 
-    fly("v1", 2.05, 2.2);
-    fly("v4", 2.25, 2.05);
-    fly("bar4", 2.4, 2.15);
-    fly("bar2", 2.55, 2.0);
+    fly("v1", 20, 52);
+    fly("v4", 24, 50);
+    fly("bar4", 28, 48);
+    fly("bar2", 32, 46);
 
-    /* —— 4. Logo: continuous stroke growth, one cascade —— */
+    /* —— 55–88%: remaining strokes extend as continuous lines —— */
     const cascade = [
-      ["con1", 4.55, 0.35],
-      ["bar1", 4.7, 0.5],
-      ["c1", 4.75, 0.32],
-      ["v2", 4.9, 0.55],
-      ["con2", 4.95, 0.32],
-      ["bar3", 5.1, 0.55],
-      ["c3", 5.15, 0.32],
-      ["v3", 5.3, 0.55],
-      ["con3", 5.45, 0.3],
-      ["c2", 5.55, 0.4]
+      ["con1", 55, 8],
+      ["bar1", 58, 10],
+      ["c1", 59, 7],
+      ["v2", 62, 11],
+      ["con2", 64, 7],
+      ["bar3", 67, 11],
+      ["c3", 68, 7],
+      ["v3", 71, 11],
+      ["con3", 76, 6],
+      ["c2", 80, 8]
     ];
-
     const byId = Object.fromEntries(EXTEND.map((e) => [e.id, e]));
     cascade.forEach(([id, at, dur]) => {
       const spec = byId[id];
@@ -268,10 +281,25 @@
       );
     });
 
-    const hint = document.querySelector(".hint");
-    if (hint) tl.to(hint, { opacity: 0, duration: 0.6, ease: "power1.out" }, 0.2);
+    /* —— 75–100%: second background dominates —— */
+    if (bgTwo) {
+      tl.to(bgTwo, { opacity: 1, ease: "power1.inOut", duration: 22 }, 75);
+    }
 
-    tl.to({}, { duration: MODE === "auto" ? 1.4 : 0.85 }, 6.15);
+    /* —— 92–100%: swap pieces → final mark (kills 1px seams) —— */
+    const allPieceNodes = Object.keys(LOGO).map((k) => pieces[k]);
+    if (logoFinal) {
+      tl.to(logoFinal, { autoAlpha: 1, ease: "power1.out", duration: 5 }, 92);
+      tl.to(allPieceNodes, { autoAlpha: 0, ease: "power1.out", duration: 4 }, 94);
+    }
+
+    /* Ensure people are gone from hit-testing once cropped away */
+    tl.set(Object.values(figEls), { autoAlpha: 0 }, 48);
+
+    const hint = document.querySelector(".hint");
+    if (hint) tl.to(hint, { opacity: 0, duration: 8, ease: "power1.out" }, 8);
+
+    tl.to({}, { duration: 2 }, 98);
   }
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -282,9 +310,9 @@
       scrollTrigger: {
         trigger: ".pin-wrap",
         start: "top top",
-        end: "+=560%",
+        end: "+=620%",
         pin: true,
-        scrub: 1.15,
+        scrub: 1.2,
         anticipatePin: 1
       }
     });
@@ -299,7 +327,7 @@
   if (MODE === "auto") {
     const statusEl = document.getElementById("auto-status");
     const replayBtn = document.getElementById("btn-replay");
-    const TARGET_SECONDS = 11;
+    const TARGET_SECONDS = 12;
 
     const tl = gsap.timeline({
       defaults: { ease: "none" },
@@ -326,7 +354,7 @@
         return;
       }
       tl.invalidate().pause(0);
-      gsap.delayedCall(0.7, () => tl.play(0));
+      gsap.delayedCall(0.6, () => tl.play(0));
     }
 
     if (replayBtn) replayBtn.addEventListener("click", playOnce);
