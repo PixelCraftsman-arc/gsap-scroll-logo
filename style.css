@@ -77,9 +77,10 @@ body {
   pointer-events: none;
   user-select: none;
   will-change: transform;
+  /* Solid underlay so type never reads through line-art gaps */
+  isolation: isolate;
 }
 
-/* Seated woman stays in front of her black bar at all times. */
 .fig--over-bar {
   z-index: 6;
 }
@@ -88,6 +89,9 @@ body {
   display: block;
   width: 100%;
   height: 100%;
+  /* Prevent browser from treating translucent edges as blend */
+  image-rendering: auto;
+  background: transparent;
 }
 
 .piece {
@@ -96,11 +100,12 @@ body {
   background: var(--ink);
   will-change: transform;
   backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 .piece.is-flying {
   z-index: 5;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: none;
 }
 
 .after {
