@@ -216,19 +216,23 @@
     tl.to(".l4", { y: "18vh", ease: accel, duration: 18 }, 10);
     tl.to(".l4", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 28);
 
+    /*
+     * People: no batch autoAlpha — they slide off and the stage crops them.
+     * Short hold, then staggered exits with even easing so early scroll
+     * reads as gentle drift, not an instant pop-off.
+     */
+    const figEase = "power1.inOut";
     const figExits = [
-      ["push-bar", 6, { x: "-22vw", y: "10vh", rotation: -2 }],
-      ["carry-left", 10, { x: "-24vw", y: "8vh", rotation: -2.5 }],
-      ["measure", 14, { x: "26vw", y: "6vh", rotation: 2.5 }],
-      ["carry-right", 18, { x: "20vw", y: "9vh", rotation: 2 }],
-      ["sit", 22, { x: "18vw", y: "14vh", rotation: 1.5 }]
+      ["push-bar", 10, 26, { x: "-20vw", y: "9vh", rotation: -1.5 }],
+      ["carry-left", 13, 24, { x: "-22vw", y: "8vh", rotation: -2 }],
+      ["measure", 16, 24, { x: "24vw", y: "5vh", rotation: 2 }],
+      ["carry-right", 19, 22, { x: "20vw", y: "8vh", rotation: 1.5 }],
+      ["sit", 22, 20, { x: "12vw", y: "18vh", rotation: 1 }]
     ];
 
-    figExits.forEach(([id, at, move]) => {
-      tl.to(figEls[id], { ...move, ease: accel, duration: 20 }, at);
+    figExits.forEach(([id, at, dur, move]) => {
+      tl.to(figEls[id], { ...move, ease: figEase, duration: dur }, at);
     });
-
-    tl.set(Object.values(figEls), { autoAlpha: 0 }, EXIT);
 
     const hint = document.querySelector(".hint");
     if (hint) tl.to(hint, { opacity: 0, duration: 6, ease: "power1.out" }, 4);
