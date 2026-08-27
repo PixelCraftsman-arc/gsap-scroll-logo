@@ -322,28 +322,28 @@
       });
     }
 
-    const LAND = 0.5;
+    const LAND = 0.42;
 
     /* Right mark: top rail out of v1, columns descend as one pour */
     drawStrokes(v1At + v1Dur * LAND, [
-      ["c1", 0, 8],
-      ["v2", 1, 34],
-      ["v3", 2, 34]
+      ["c1", 0, 7],
+      ["v2", 0.6, 32],
+      ["v3", 0.6, 32]
     ]);
 
-    drawStrokes(v4At + v4Dur * LAND, [["c3", 0, 10]]);
+    drawStrokes(v4At + v4Dur * LAND, [["c3", 0, 9]]);
 
-    drawStrokes(v1At + v1Dur * 0.62, [["c2", 0, 18]]);
+    drawStrokes(v1At + v1Dur * 0.58, [["c2", 0, 16]]);
 
     /* Left mark: fork up/down from bar2, bridge toward bar4 */
     drawStrokes(bar2At + bar2Dur * LAND, [
-      ["con1", 0, 9],
-      ["bar1", 2, 26],
-      ["bar3", 0, 26],
-      ["con2", 18, 10]
+      ["con1", 0, 8],
+      ["bar1", 1, 24],
+      ["bar3", 0, 24],
+      ["con2", 16, 9]
     ]);
 
-    drawStrokes(bar4At + bar4Dur * LAND, [["con3", 0, 11]]);
+    drawStrokes(bar4At + bar4Dur * LAND, [["con3", 0, 10]]);
 
     tl.call(() => {
       ["bar2", "bar4", "v1", "v4"].forEach((k) => pieces[k]?.classList.remove("is-flying"));
