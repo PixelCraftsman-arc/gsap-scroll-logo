@@ -98,7 +98,7 @@
     wrap.style.height = f.h + "px";
 
     const img = document.createElement("img");
-    img.src = "img/" + f.src + ".png?v=3";
+    img.src = "img/" + f.src + ".png?v=4";
     img.alt = "";
     img.draggable = false;
     img.decode && img.decode().catch(() => {});
