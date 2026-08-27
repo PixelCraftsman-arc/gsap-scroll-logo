@@ -129,6 +129,11 @@ body {
   box-shadow: none;
 }
 
+/* Grow-in strokes sit above the bed but below travelling pieces */
+.piece--stroke {
+  z-index: 3;
+}
+
 .logo-final {
   position: absolute;
   left: 368px;

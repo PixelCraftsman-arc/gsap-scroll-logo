@@ -5,7 +5,7 @@
  *
  *   0.00 – 0.30  type + illustrations exit (staggered, accelerating)
  *   0.25 – 0.45  black elements detach — counter-move, gather momentum
- *   0.40 – 0.85  pieces travel and converge
+ *   0.40 – 0.85  pieces travel; remaining strokes draw as continuous lines
  *   0.85 – 1.00  final snap, settle, logo lock-up
  */
 
@@ -66,18 +66,23 @@
 
   const TRAVEL = ["bar2", "bar4", "v1", "v4"];
 
-  const EXTEND = [
-    { id: "con1", prop: "scaleY", origin: "50% 100%" },
-    { id: "bar1", prop: "scaleY", origin: "50% 100%" },
-    { id: "con2", prop: "scaleY", origin: "50% 0%" },
-    { id: "bar3", prop: "scaleX", origin: "100% 50%" },
-    { id: "con3", prop: "scaleY", origin: "50% 0%" },
-    { id: "c1", prop: "scaleX", origin: "0% 50%" },
-    { id: "v2", prop: "scaleY", origin: "50% 0%" },
-    { id: "c3", prop: "scaleX", origin: "100% 50%" },
-    { id: "v3", prop: "scaleY", origin: "50% 0%" },
-    { id: "c2", prop: "scaleX", origin: "0% 50%" }
-  ];
+  const STROKE = {
+    /* Left glyph — extend from landed bar2 / toward bar4 */
+    con1: { prop: "scaleY", origin: "50% 100%" },
+    bar1: { prop: "scaleY", origin: "50% 100%" },
+    bar3: { prop: "scaleY", origin: "50% 0%" },
+    con2: { prop: "scaleX", origin: "0% 50%" },
+    con3: { prop: "scaleX", origin: "0% 50%" },
+    /* Right glyph — extend from landed v1 / toward v4 */
+    c1: { prop: "scaleY", origin: "50% 0%" },
+    v2: { prop: "scaleY", origin: "50% 0%" },
+    v3: { prop: "scaleY", origin: "50% 0%" },
+    c3: { prop: "scaleY", origin: "50% 0%" },
+    c2: { prop: "scaleY", origin: "50% 100%" }
+  };
+
+  const STROKE_IDS = Object.keys(STROKE);
+  const STROKE_EASE = "none";
 
   function makePiece(id, r) {
     const b = BLEED[id] || {};
@@ -93,6 +98,7 @@
   }
 
   Object.keys(LOGO).forEach((k) => makePiece(k, LOGO[k]));
+  STROKE_IDS.forEach((id) => pieces[id].classList.add("piece--stroke"));
 
   FIGS.forEach((f) => {
     const wrap = document.createElement("div");
@@ -147,7 +153,8 @@
       });
     });
 
-    EXTEND.forEach(({ id, prop, origin }) => {
+    STROKE_IDS.forEach((id) => {
+      const { prop, origin } = STROKE[id];
       const state = {
         autoAlpha: 1,
         x: 0,
@@ -286,29 +293,55 @@
     }
 
     const travelDur = PHASE3.end - PHASE3.start - 6;
-    converge("v1", PHASE3.start, travelDur);
-    converge("v4", PHASE3.start + 4, travelDur - 2);
-    converge("bar4", PHASE3.start + 8, travelDur - 4);
-    converge("bar2", PHASE3.start + 12, travelDur - 6);
+    const v1At = PHASE3.start;
+    const v4At = PHASE3.start + 4;
+    const bar4At = PHASE3.start + 8;
+    const bar2At = PHASE3.start + 12;
+    const v1Dur = travelDur;
+    const v4Dur = travelDur - 2;
+    const bar4Dur = travelDur - 4;
+    const bar2Dur = travelDur - 6;
 
-    /* Remaining strokes extend while pieces converge */
-    const cascade = [
-      ["con1", 52, 6],
-      ["bar1", 55, 8],
-      ["c1", 56, 5],
-      ["v2", 59, 8],
-      ["con2", 61, 5],
-      ["bar3", 64, 8],
-      ["c3", 66, 5],
-      ["v3", 69, 8],
-      ["con3", 74, 5],
-      ["c2", 78, 6]
-    ];
-    const byId = Object.fromEntries(EXTEND.map((e) => [e.id, e]));
-    cascade.forEach(([id, at, dur]) => {
-      const spec = byId[id];
-      tl.to(pieces[id], { [spec.prop]: 1, ease: "power1.inOut", duration: dur }, at);
-    });
+    converge("v1", v1At, v1Dur);
+    converge("v4", v4At, v4Dur);
+    converge("bar4", bar4At, bar4Dur);
+    converge("bar2", bar2At, bar2Dur);
+
+    /*
+     * Remaining logo strokes draw as continuous lines from landed pieces —
+     * linear under scrub, overlapping segments, origins on shared edges.
+     */
+    function drawStrokes(at, segments) {
+      segments.forEach(([id, offset, dur]) => {
+        const spec = STROKE[id];
+        tl.to(
+          pieces[id],
+          { [spec.prop]: 1, ease: STROKE_EASE, duration: dur },
+          at + offset
+        );
+      });
+    }
+
+    /* Right mark: top rail out of v1, columns descend, foot + v4 tie-in */
+    drawStrokes(v1At + v1Dur * 0.58, [
+      ["c1", 0, 7],
+      ["v2", 2, 30],
+      ["v3", 4, 30]
+    ]);
+
+    drawStrokes(v4At + v4Dur * 0.52, [["c3", 0, 9]]);
+
+    drawStrokes(v1At + v1Dur * 0.7, [["c2", 0, 16]]);
+
+    /* Left mark: fork up/down from bar2, bridge toward bar4 */
+    drawStrokes(bar2At + bar2Dur * 0.58, [
+      ["con1", 0, 8],
+      ["bar1", 3, 24],
+      ["bar3", 1, 24],
+      ["con2", 20, 9]
+    ]);
+
+    drawStrokes(bar4At + bar4Dur * 0.5, [["con3", 0, 10]]);
 
     tl.call(() => {
       ["bar2", "bar4", "v1", "v4"].forEach((k) => pieces[k]?.classList.remove("is-flying"));
