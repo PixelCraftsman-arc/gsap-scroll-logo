@@ -67,13 +67,13 @@
   const TRAVEL = ["bar2", "bar4", "v1", "v4"];
 
   const STROKE = {
-    /* Left glyph — extend from landed bar2 / toward bar4 */
+    /* Left glyph — fork from landed bar2, bridge from bar4 */
     con1: { prop: "scaleY", origin: "50% 100%" },
     bar1: { prop: "scaleY", origin: "50% 100%" },
     bar3: { prop: "scaleY", origin: "50% 0%" },
     con2: { prop: "scaleX", origin: "0% 50%" },
     con3: { prop: "scaleX", origin: "0% 50%" },
-    /* Right glyph — extend from landed v1 / toward v4 */
+    /* Right glyph — rail + columns from v1, tie-in from v4 */
     c1: { prop: "scaleY", origin: "50% 0%" },
     v2: { prop: "scaleY", origin: "50% 0%" },
     v3: { prop: "scaleY", origin: "50% 0%" },
@@ -242,7 +242,7 @@
 
     /*
      * Central bar figures stay in frame as pieces travel — fade them out
-     * before stroke extension assembles the logo (phase 3 cascade ~52+).
+     * before stroke extension assembles the logo (phase 3 ~50%+).
      */
     const centralFigs = ["carry-right", "sit"];
     centralFigs.forEach((id, i) => {
@@ -322,26 +322,28 @@
       });
     }
 
-    /* Right mark: top rail out of v1, columns descend, foot + v4 tie-in */
-    drawStrokes(v1At + v1Dur * 0.58, [
-      ["c1", 0, 7],
-      ["v2", 2, 30],
-      ["v3", 4, 30]
+    const LAND = 0.5;
+
+    /* Right mark: top rail out of v1, columns descend as one pour */
+    drawStrokes(v1At + v1Dur * LAND, [
+      ["c1", 0, 8],
+      ["v2", 1, 34],
+      ["v3", 2, 34]
     ]);
 
-    drawStrokes(v4At + v4Dur * 0.52, [["c3", 0, 9]]);
+    drawStrokes(v4At + v4Dur * LAND, [["c3", 0, 10]]);
 
-    drawStrokes(v1At + v1Dur * 0.7, [["c2", 0, 16]]);
+    drawStrokes(v1At + v1Dur * 0.62, [["c2", 0, 18]]);
 
     /* Left mark: fork up/down from bar2, bridge toward bar4 */
-    drawStrokes(bar2At + bar2Dur * 0.58, [
-      ["con1", 0, 8],
-      ["bar1", 3, 24],
-      ["bar3", 1, 24],
-      ["con2", 20, 9]
+    drawStrokes(bar2At + bar2Dur * LAND, [
+      ["con1", 0, 9],
+      ["bar1", 2, 26],
+      ["bar3", 0, 26],
+      ["con2", 18, 10]
     ]);
 
-    drawStrokes(bar4At + bar4Dur * 0.5, [["con3", 0, 10]]);
+    drawStrokes(bar4At + bar4Dur * LAND, [["con3", 0, 11]]);
 
     tl.call(() => {
       ["bar2", "bar4", "v1", "v4"].forEach((k) => pieces[k]?.classList.remove("is-flying"));
