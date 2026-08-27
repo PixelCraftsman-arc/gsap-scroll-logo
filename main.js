@@ -216,17 +216,17 @@
     tl.to(".l4", { autoAlpha: 0, ease: "power2.in", duration: 4 }, 28);
 
     /*
-     * People: no batch autoAlpha — they slide off and the stage crops them.
-     * Short hold, then staggered exits with even easing so early scroll
-     * reads as gentle drift, not an instant pop-off.
+     * People: design-pixel drift (not vw) so motion stays proportional inside
+     * the scaled canvas. Hold until ~15%, then stagger exits through ~45%;
+     * overflow on .canvas crops them — no opacity cut.
      */
-    const figEase = "power1.inOut";
+    const figEase = "sine.inOut";
     const figExits = [
-      ["push-bar", 10, 26, { x: "-20vw", y: "9vh", rotation: -1.5 }],
-      ["carry-left", 13, 24, { x: "-22vw", y: "8vh", rotation: -2 }],
-      ["measure", 16, 24, { x: "24vw", y: "5vh", rotation: 2 }],
-      ["carry-right", 19, 22, { x: "20vw", y: "8vh", rotation: 1.5 }],
-      ["sit", 22, 20, { x: "12vw", y: "18vh", rotation: 1 }]
+      ["push-bar", 15, 30, { x: -300, y: 65, rotation: -1.5 }],
+      ["carry-left", 18, 28, { x: -340, y: 55, rotation: -2 }],
+      ["measure", 20, 28, { x: 320, y: 45, rotation: 2 }],
+      ["carry-right", 23, 26, { x: 280, y: 60, rotation: 1.5 }],
+      ["sit", 26, 24, { x: 200, y: 85, rotation: 1 }]
     ];
 
     figExits.forEach(([id, at, dur, move]) => {
