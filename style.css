@@ -97,7 +97,7 @@ body {
   z-index: 4;
   pointer-events: none;
   user-select: none;
-  will-change: transform, filter;
+  will-change: transform;
   /* Solid underlay so type never reads through line-art gaps */
   isolation: isolate;
 }
