@@ -145,6 +145,11 @@
     };
   }
 
+  function travelMagnitude(key) {
+    const o = heroOffset(key);
+    return Math.hypot(o.x, o.y);
+  }
+
   function resetScene() {
     TRAVEL.forEach((k) => {
       pieces[k].classList.remove("is-flying");
@@ -159,6 +164,7 @@
       const { prop, origin } = STROKE[id];
       const state = {
         autoAlpha: 1,
+        scale: 1,
         x: 0,
         y: 0,
         scaleX: 1,
@@ -170,6 +176,10 @@
       gsap.set(pieces[id], state);
     });
 
+    TRAVEL.forEach((k) => {
+      gsap.set(pieces[k], { scale: 1 });
+    });
+
     FIGS.forEach((f) => {
       gsap.set(figEls[f.id], {
         x: 0,
@@ -177,6 +187,7 @@
         rotation: 0,
         autoAlpha: 1,
         scale: 1,
+        filter: "none",
         left: f.x,
         top: f.y,
         width: f.w,
@@ -190,7 +201,7 @@
       autoAlpha: 1
     });
 
-    if (logoFinal) gsap.set(logoFinal, { autoAlpha: 0 });
+    if (logoFinal) gsap.set(logoFinal, { autoAlpha: 0, scale: 1 });
     if (bgTwo) gsap.set(bgTwo, { opacity: 0 });
 
     const hint = document.querySelector(".hint");
@@ -212,49 +223,39 @@
     const glide = "power2.inOut";
 
     /*
-     * Typography: drift off-frame first, then a longer sine tail fade so letters
-     * do not pop off between ~29–31% scroll.
+     * Typography: directional push off-stage (l1/l3 left, l2/l4 right) plus
+     * vertical drift, then a long sine tail fade.
      */
     const typeFade = "sine.inOut";
     const typeFadeDur = 12;
 
-    tl.to(".l1", { y: "-18vh", ease: accel, duration: 24 }, 0);
+    tl.to(".l1", { x: -80, y: "-18vh", ease: accel, duration: 24 }, 0);
     tl.to(".l1", { autoAlpha: 0, ease: typeFade, duration: typeFadeDur }, 16);
 
-    tl.to(".l2", { x: "20vw", y: "-6vh", ease: accel, duration: 22 }, 4);
+    tl.to(".l2", { x: 80, y: "-6vh", ease: accel, duration: 22 }, 4);
     tl.to(".l2", { autoAlpha: 0, ease: typeFade, duration: typeFadeDur }, 18);
 
-    tl.to(".l3", { x: "-18vw", y: "8vh", ease: accel, duration: 20 }, 7);
+    tl.to(".l3", { x: -80, y: "8vh", ease: accel, duration: 20 }, 7);
     tl.to(".l3", { autoAlpha: 0, ease: typeFade, duration: typeFadeDur }, 20);
 
-    tl.to(".l4", { y: "18vh", ease: accel, duration: 18 }, 10);
+    tl.to(".l4", { x: 80, y: "18vh", ease: accel, duration: 18 }, 10);
     tl.to(".l4", { autoAlpha: 0, ease: typeFade, duration: typeFadeDur }, 22);
 
     /*
-     * People: design-pixel drift (not vw) so motion stays proportional inside
-     * the scaled canvas. Hold until ~15%, then stagger exits through ~45%;
-     * overflow on .canvas crops them — no opacity cut.
+     * People: parallax drift away from centre with scale-down, soft blur,
+     * and opacity — clears the stage for the assembling logo.
      */
-    const figEase = "sine.inOut";
+    const figEase = "power2.inOut";
     const figExits = [
-      ["push-bar", 15, 30, { x: -300, y: 65, rotation: -1.5 }],
-      ["carry-left", 18, 28, { x: -340, y: 55, rotation: -2 }],
-      ["measure", 20, 28, { x: 320, y: 45, rotation: 2 }],
-      ["carry-right", 23, 26, { x: 280, y: 60, rotation: 1.5 }],
-      ["sit", 26, 24, { x: 200, y: 85, rotation: 1 }]
+      ["push-bar", 15, 28, { x: -320, y: 80, scale: 0.85, filter: "blur(4px)", autoAlpha: 0, rotation: -1.5 }],
+      ["carry-left", 18, 26, { x: -360, y: 70, scale: 0.85, filter: "blur(4px)", autoAlpha: 0, rotation: -2 }],
+      ["measure", 20, 26, { x: 340, y: 30, scale: 0.85, filter: "blur(4px)", autoAlpha: 0, rotation: 2 }],
+      ["carry-right", 23, 24, { x: 300, y: 55, scale: 0.85, filter: "blur(4px)", autoAlpha: 0, rotation: 1.5 }],
+      ["sit", 26, 22, { x: 220, y: 90, scale: 0.85, filter: "blur(4px)", autoAlpha: 0, rotation: 1 }]
     ];
 
     figExits.forEach(([id, at, dur, move]) => {
       tl.to(figEls[id], { ...move, ease: figEase, duration: dur }, at);
-    });
-
-    /*
-     * Central bar figures stay in frame as pieces travel — fade them out
-     * before stroke extension assembles the logo (phase 3 ~50%+).
-     */
-    const centralFigs = ["carry-right", "sit"];
-    centralFigs.forEach((id, i) => {
-      tl.to(figEls[id], { autoAlpha: 0, ease: "power1.in", duration: 12 }, 36 + i * 2);
     });
 
     const hint = document.querySelector(".hint");
@@ -301,20 +302,15 @@
     }
 
     const travelStart = 40;
-    const travelDur = TRAVEL_END - travelStart - 6;
-    const v1At = travelStart;
-    const v4At = travelStart + 2;
-    const bar4At = travelStart + 4;
-    const bar2At = travelStart + 6;
-    const v1Dur = travelDur;
-    const v4Dur = travelDur - 2;
-    const bar4Dur = travelDur - 4;
-    const bar2Dur = travelDur - 6;
+    const travelWindow = TRAVEL_END - travelStart;
+    const maxMag = Math.max(...TRAVEL.map((k) => travelMagnitude(k)));
 
-    converge("v1", v1At, v1Dur);
-    converge("v4", v4At, v4Dur);
-    converge("bar4", bar4At, bar4Dur);
-    converge("bar2", bar2At, bar2Dur);
+    TRAVEL.forEach((key) => {
+      const ratio = travelMagnitude(key) / maxMag;
+      const dur = Math.max(12, travelWindow * ratio);
+      const at = TRAVEL_END - dur;
+      converge(key, at, dur);
+    });
 
     tl.set(
       TRAVEL.map((k) => pieces[k]),
@@ -371,9 +367,14 @@
 
     const allPieceNodes = Object.keys(LOGO).map((k) => pieces[k]);
 
+    /* Micro lock-in: subtle scale bump before final mark swap */
+    tl.to(allPieceNodes, { scale: 1.03, ease: "power2.out", duration: 2.5 }, 90);
+    tl.to(allPieceNodes, { scale: 1, ease: "power2.inOut", duration: 2.5 }, 92.5);
+
     if (logoFinal) {
-      tl.set(logoFinal, { autoAlpha: 1 }, LOCKUP);
-      tl.set(allPieceNodes, { autoAlpha: 0 }, LOCKUP);
+      tl.set(logoFinal, { autoAlpha: 1, scale: 1.02 }, LOCKUP);
+      tl.set(allPieceNodes, { autoAlpha: 0, scale: 1 }, LOCKUP);
+      tl.to(logoFinal, { scale: 1, ease: "power2.out", duration: 4 }, LOCKUP);
     }
 
     tl.to({}, { duration: 6 }, LOCKUP);
@@ -390,7 +391,7 @@
         start: "top top",
         end: "+=620%",
         pin: true,
-        scrub: 1.2,
+        scrub: 0.9,
         anticipatePin: 1,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
