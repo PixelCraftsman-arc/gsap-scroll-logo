@@ -61,7 +61,7 @@
   const FIGS = [
     { id: "carry-left", src: "fig-push-left", x: 75, y: 197, w: 106, h: 186, layer: "front", side: "left" },
     { id: "carry-right", src: "fig-carry-right", x: 414, y: 190, w: 109, h: 193, layer: "front", side: "right" },
-    { id: "sit", src: "fig-sit", x: 718, y: 306, w: 116, h: 181, layer: "over-bar", side: "right" },
+    { id: "sit", src: "fig-sit", x: 752, y: 306, w: 116, h: 181, layer: "over-bar", side: "right" },
     { id: "push-bar", src: "fig-push-bar", x: 96, y: 446, w: 98, h: 204, layer: "front", side: "left" },
     { id: "measure", src: "fig-measure", x: 1044, y: 70, w: 102, h: 144, layer: "front", side: "right" }
   ];
