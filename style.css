@@ -78,7 +78,7 @@ body {
 
 .line {
   position: absolute;
-  z-index: 1;
+  z-index: 10;
   margin: 0;
   font-weight: 300;
   font-size: 151.3px;
