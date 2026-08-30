@@ -112,7 +112,7 @@
     wrap.style.height = f.h + "px";
 
     const img = document.createElement("img");
-    img.src = "img/" + f.src + ".png?v=4";
+    img.src = "img/" + f.src + ".png?v=5";
     img.alt = "";
     img.draggable = false;
     wrap.appendChild(img);
